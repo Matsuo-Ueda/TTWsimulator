@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>熱処理シミュレータ</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        canvas {
+            display: block;
+            margin: auto;
+            margin-top: 20px;
+            max-width: 80%; /* グラフの幅を調整 */
+        }
+
+        label {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        input {
+            font-size: 16px;
+            padding: 5px;
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 8px 16px;
+            font-size: 16px;
+        }
+
+        p {
+            margin-top: 10px;
+            font-size: 16px;
+            font-style: italic;
+        }
+
+        .chart-container {
+            max-width: 80%;
+            margin: auto;
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .chart-container canvas {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>熱処理シミュレータ</h1>
+    <p>JP: 乾熱処理によるヒノキ柾目のL*の変化を計算します．温度を入力し，Enterキーを押すかボタン"calc"を押してください．</p>
+    <p>EN: Heat Treatment Simulator: Calculates the change in L* of Japanese cypress veneer due to dry heat treatment. Eneter temperature (degree C) and press enter key.</p>
+    <p>FR: Simulateur de traitement thermique : calcule le changement de L* du placage de cyprès japonais dû au traitement thermique sec. Entrez la température (degré C) et appuyez sur la touche Entrée.</p>
+    <p>IT: Simulatore del trattamento termico: calcola la variazione in L* dell'impiallacciatura di cipresso giapponese dovuta al trattamento termico a secco. Immettere la temperatura (gradi C) e premere il tasto Invio.</p>
+    <p>Data source: Matsuo et al. Appl. Phys. A 99, 47–52 (2010), <a href="https://doi.org/10.1007/s00339-010-5542-2" target="_blank">DOI</a>,  <a href="http://hdl.handle.net/2433/156041" target="_blank">Repository KURENAI</a></p>
+
+    <label for="inputT">温度(temp)(℃):</label>
+    <input type="number" id="inputT" placeholder="ex. 180" onkeydown="if(event.key==='Enter'){calculateAAndDrawGraph()}">
+
+    <button onclick="calculateAAndDrawGraph()">calc</button>
+
+    <p id="aValue"></p>
+
+    <div class="chart-container">
+        <!-- グラフ描画のためのCanvas要素1 -->
+        <canvas id="myChart1" width="400" height="400"></canvas>
+
+        <!-- グラフ描画のためのCanvas要素2 -->
+        <canvas id="myChart2" width="400" height="400"></canvas>
+    </div>
+
+    <p id="saveMessage"></p>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', calculateAAndDrawGraph);
+
+        var myChart1; // Chartオブジェクトを格納する変数1
+        var myChart2; // Chartオブジェクトを格納する変数2
+
+        function calculateAAndDrawGraph() {
+            var inputT = parseFloat(document.getElementById("inputT").value);
+
+            if (isNaN(inputT)) {
+                alert("有効な数値を入力してください。");
+                return;
+            }
+
+            clearGraph(); // 既存のChartオブジェクトを破棄
+
+            var a = calculateA(inputT);
+
+            document.getElementById("aValue").innerText = "計算されたaTの値: " + a.toFixed(4);
+
+            var data = calculateGraphData(a);
+
+            drawGraphs(data);
+
+            document.getElementById("saveMessage").innerText = "これらのグラフは画像として保存できます";
+        }
+
+        function clearGraph() {
+            if (myChart1) {
+                myChart1.destroy();
+            }
+            if (myChart2) {
+                myChart2.destroy();
+            }
+        }
+
+        function calculateA(temperature) {
+            return Math.exp(14027.5 * (1 / (temperature + 273)) - 30.7899);
+        }
+
+        function calculateGraphData(a) {
+            var xValues = [0.1, 0.5, 1, 2, 3, 5, 7, 10, 12, 18, 24, 36, 48, 60, 72, 84, 96, 120];
+            var yValues = xValues.map(function (x) {
+                return 82.015 - (44.31 / (1 + 9.32 * Math.exp(-2.12 * Math.log10(x * a))));
+            });
+
+            return {
+                labels: xValues.map(function (x) { return (x * a).toFixed(2) }),
+                datasets: [{
+                    label: 'Parameter',
+                    data: yValues,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    pointRadius: 5,
+                    pointBackgroundColor: 'rgba(75, 192, 192, 1)',
+                    fill: false
+                }]
+            };
+        }
+
+        function drawGraphs(data) {
+            var ctx1 = document.getElementById('myChart1').getContext('2d');
+            myChart1 = new Chart(ctx1, {
+                type: 'line',
+                data: data,
+                options: {
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'time (hour)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'parameter'
+                            }
+                        }
+                    }
+                }
+            });
+
+            var ctx2 = document.getElementById('myChart2').getContext('2d');
+            myChart2 = new Chart(ctx2, {
+                type: 'line',
+                data: data,
+                options: {
+                    scales: {
+                        x: {
+                            type: 'logarithmic',
+                            base: 10, // 底を10とする対数スケール
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'time (hour)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'parameter'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>
