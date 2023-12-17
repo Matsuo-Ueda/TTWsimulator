@@ -90,7 +90,7 @@
             var inputT = parseFloat(document.getElementById("inputT").value);
 
             if (isNaN(inputT)) {
-                alert("有効な数値を入力してください。");
+                alert("有効な数値を入力してください。/Input valid number.");
                 return;
             }
 
@@ -121,7 +121,7 @@
         }
 
         function calculateGraphData(a) {
-            var xValues = [0.1, 0.5, 1, 2, 3, 5, 7, 10, 12, 18, 24, 36, 48, 60, 72, 84, 96, 120];
+            var xValues = [0.001, 0.01, 0.1, 0.5, 1, 2, 3, 5, 7, 10, 12, 18, 24, 36, 48, 60, 72, 84, 96, 120];
             var yValues = xValues.map(function (x) {
                 return 82.015 - (44.31 / (1 + 9.32 * Math.exp(-2.12 * Math.log10(x * a))));
             });
