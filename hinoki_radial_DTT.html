@@ -72,9 +72,10 @@
     <p>EN: Heat Treatment Simulator: Calculates the change in L* of Japanese cypress board due to dry heat treatment. Eneter temperature (degree C) and press enter key.</p>
     <p>FR: Simulateur de traitement thermique : calcule le changement de L* du placage de cyprès japonais dû au traitement thermique sec. Entrez la température (degré C) et appuyez sur la touche Entrée.</p>
     <p>IT: Simulatore del trattamento termico: calcola la variazione in L* dell'impiallacciatura di cipresso giapponese dovuta al trattamento termico a secco. Immettere la temperatura (gradi C) e premere il tasto Invio.</p>
-    <p>Data source: Matsuo et al. Appl. Phys. A 99, 47–52 (2010), <a href="https://doi.org/10.1007/s00339-010-5542-2" target="_blank">DOI</a>,  <a href="http://hdl.handle.net/2433/156041" target="_blank">Repository KURENAI</a></p>
+    <p>Data source 1: Matsuo et al. Appl. Phys. A 99, 47–52 (2010), <a href="https://doi.org/10.1007/s00339-010-5542-2" target="_blank">DOI</a>,  <a href="http://hdl.handle.net/2433/156041" target="_blank">Repository KURENAI</a></p>
+    <p>Data source 2: Matsuo et al. Holzforschung 65, 361–368 (2011), <a href="https://doi.org/10.1515/hf.2011.040" target="_blank">DOI</a>,  <a href="http://hdl.handle.net/2433/158749" target="_blank">Repository KURENAI</a></p>
 
-    <label for="inputT">温度(temp)(℃):</label>
+     <label for="inputT">温度(temp)(℃):</label>
     <input type="number" id="inputT" placeholder="ex. 180" onkeydown="if(event.key==='Enter'){calculateAAndDrawGraph()}">
 
     <button onclick="calculateAAndDrawGraph()">calc</button>
@@ -84,9 +85,15 @@
     <div class="chart-container">
         <!-- グラフ描画のためのCanvas要素1 -->
         <canvas id="myChart1" width="400" height="400"></canvas>
+        <p>図1. 熱処理による変化（Fig.1 Model of thermal treatment）</p>
 
         <!-- グラフ描画のためのCanvas要素2 -->
         <canvas id="myChart2" width="400" height="400"></canvas>
+        <p>図2. 熱処理による変化（対数軸）（Fig. 2 Model of thermal treatment in logarithmic scale）</p>
+
+        <!-- グラフ描画のためのCanvas要素3 -->
+        <canvas id="myChart3" width="400" height="400"></canvas>
+        <p>図3. 参考：古材の測定値から作成した経年変化モデル（Fig. 3 Model of natural aging）</p>
     </div>
 
     <p id="saveMessage"></p>
@@ -96,12 +103,13 @@
 
         var myChart1; // Chartオブジェクトを格納する変数1
         var myChart2; // Chartオブジェクトを格納する変数2
+        var myChart3; // Chartオブジェクトを格納する変数3
 
         function calculateAAndDrawGraph() {
             var inputT = parseFloat(document.getElementById("inputT").value);
 
             if (isNaN(inputT)) {
-                alert("有効な数値を入力してください。/Input valid number.");
+                alert("有効な数値を入力してください。");
                 return;
             }
 
@@ -111,11 +119,12 @@
 
             document.getElementById("aValue").innerText = "計算されたaTの値: " + a.toFixed(4);
 
-            var data = calculateGraphData(a);
+            var data1 = calculateGraphData(a);
+            var data2 = calculateGraphData(a); // 同じデータを使用
+            var data3 = calculateAdditionalGraphData(); // 追加のデータ
 
-            drawGraphs(data);
+            drawGraphs(data1, data2, data3);
 
-            document.getElementById("saveMessage").innerText = "これらのグラフは画像として保存できます";
         }
 
         function clearGraph() {
@@ -124,6 +133,9 @@
             }
             if (myChart2) {
                 myChart2.destroy();
+            }
+            if (myChart3) {
+                myChart3.destroy();
             }
         }
 
@@ -140,7 +152,7 @@
             return {
                 labels: xValues.map(function (x) { return (x * a).toFixed(2) }),
                 datasets: [{
-                    label: 'Parameter',
+                    label: '熱処理(thermal treatment)',
                     data: yValues,
                     borderColor: 'rgba(75, 192, 192, 1)',
                     borderWidth: 2,
@@ -151,11 +163,29 @@
             };
         }
 
-        function drawGraphs(data) {
+        function calculateAdditionalGraphData() {
+            var xValues = [0.1, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400];
+            var yValues = [81.45252903, 78.76848164, 76.24318072, 74.0952641, 72.22201569, 70.56372984, 69.0799588, 67.74132789, 66.52542217, 65.41467497, 64.3949554, 62.58460723, 61.02357334, 59.66135167, 58.46071607, 57.3934558, 56.43775338, 55.57644016];
+
+            return {
+                labels: xValues.map(function (x) { return x.toString() }),
+                datasets: [{
+                    label: '経年変化(natural aging)',
+                    data: yValues,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 2,
+                    pointRadius: 5,
+                    pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                    fill: false
+                }]
+            };
+        }
+
+        function drawGraphs(data1, data2, data3) {
             var ctx1 = document.getElementById('myChart1').getContext('2d');
             myChart1 = new Chart(ctx1, {
                 type: 'line',
-                data: data,
+                data: data1,
                 options: {
                     scales: {
                         x: {
@@ -179,7 +209,7 @@
             var ctx2 = document.getElementById('myChart2').getContext('2d');
             myChart2 = new Chart(ctx2, {
                 type: 'line',
-                data: data,
+                data: data2,
                 options: {
                     scales: {
                         x: {
@@ -189,6 +219,30 @@
                             title: {
                                 display: true,
                                 text: 'time (hour)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'parameter'
+                            }
+                        }
+                    }
+                }
+            });
+
+            var ctx3 = document.getElementById('myChart3').getContext('2d');
+            myChart3 = new Chart(ctx3, {
+                type: 'line',
+                data: data3,
+                options: {
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'time (year)'
                             }
                         },
                         y: {
